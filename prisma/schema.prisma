@@ -1,0 +1,882 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                       String  @id @default(cuid())
+  userId                   String
+  type                     String
+  provider                 String
+  providerAccountId        String
+  refresh_token            String?
+  access_token             String?
+  expires_at               Int?
+  token_type               String?
+  scope                    String?
+  id_token                 String?
+  session_state            String?
+  refresh_token_expires_in Int?
+  user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id                  String                   @id @default(cuid())
+  name                String?
+  emailVerified       DateTime?
+  image               String?
+  country             Country?
+  tgId                String?                  @unique
+  username            String?
+  role                UserRole                 @default(USER)
+  passwordHashed      String?
+  referralCode        String?
+  createdAt           DateTime                 @default(now())
+  solanaWalletAddress String?
+  tonWalletAddress    String?
+  isActive            Boolean                  @default(true)
+  nickname            String?
+  twitterId           String?
+  twitterImage        String?
+  twitterName         String?
+  twitterUsername     String?
+  isBanned            Boolean                  @default(false)
+  accounts            Account[]
+  challengeProgresses ChallengeProgress[]
+  frenAsUser1         Friendship[]             @relation("User1Friendships")
+  frenAsUser2         Friendship[]             @relation("User2Friendships")
+  gameState           GameState?
+  raffleEntries       RaffleEntry[]
+  receivedReferral    Referral?                @relation("InviteeReferral")
+  sentReferrals       Referral[]               @relation("InviterReferrals")
+  sessions            Session[]
+  submarine           Submarine?
+  transactions        Transaction[]
+  airdropApplications UserAirdropApplication[]
+  userCharacter       UserCharacter?
+  userItems           UserItem[]
+  onboarding          UserOnboarding[]
+  purchases           UserPurchase[]
+  userRank            UserRank?
+  rewards             UserReward[]
+  raffleWins          Raffle[]               @relation("Winner")
+  presaleContributions PresaleContribution[] @relation("UserContributions") // Contributions made BY this user
+  presaleInvitees      PresaleContribution[] @relation("PresaleInvitations") // Contributions made by users THIS user invited to the presale
+  notes               String?    // Admin notes about the user
+}
+
+model AirdropSeason {
+  id           String                   @id @default(cuid())
+  name         String                   @unique
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+  applications UserAirdropApplication[]
+}
+
+model UserAirdropApplication {
+  id              String                   @id @default(cuid())
+  userId          String
+  airdropSeasonId String
+  appliedAt       DateTime                 @default(now())
+  status          AirdropApplicationStatus @default(PENDING)
+  claimed         Boolean                  @default(false)
+  claimedAt       DateTime?
+  walletAddress   String?
+  amount          Int?
+  airdropSeason   AirdropSeason            @relation(fields: [airdropSeasonId], references: [id], onDelete: Cascade)
+  user            User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, airdropSeasonId])
+}
+
+
+model PresaleContribution {
+  id                      String   @id @default(cuid())
+  userId                  String?   // The user who made the contribution (invitee)
+
+
+  paymentAmount           Decimal?  @db.Decimal(18, 6) // Amount of PAYMENT currency SOL
+  inviterId               String?  // Optional: ID of the influencer who referred this user for the presale
+  referralCodeUsed        String?  // Optional: The actual referral code used
+
+  contributingWalletAddress String   // Solana wallet address used for THIS contribution
+
+
+  // --- Relations ---
+  user User? @relation("UserContributions", fields: [userId], references: [id], onDelete: Cascade) // Relation to the contributor
+  inviter User? @relation("PresaleInvitations", fields: [inviterId], references: [id], onDelete: SetNull) // Relation to the influencer (inviter) - SetNull means if inviter is deleted, keep the contribution record but nullify inviterId
+
+  // Indices
+  @@index([userId])
+  @@index([contributingWalletAddress])
+  @@index([inviterId]) // Index for efficient lookup by inviter
+}
+
+model MinerConfig {
+  id         String   @id @default(cuid())
+  active     Boolean  @default(false)
+  baseRate   Decimal  @db.Decimal(12, 6)
+  multiplier Decimal  @default(1) @db.Decimal(10, 4)
+  updatedAt  DateTime @updatedAt
+
+  @@index([updatedAt])
+}
+
+model Onboarding {
+  id          String           @id @default(uuid())
+  name        String           @unique
+  isActive    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  onboardings UserOnboarding[]
+}
+
+model UserOnboarding {
+  id           String     @id @default(uuid())
+  userId       String     @map("user_id")
+  onboardingId String
+  completed    Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  onboarding   Onboarding @relation(fields: [onboardingId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Submarine {
+  id                 String            @id @default(cuid())
+  userId             String            @unique
+  submarineSettingId String?
+  startedAt          DateTime?
+  endsAt             DateTime?
+  collected          Boolean           @default(false)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  submarineSetting   SubmarineSetting? @relation(fields: [submarineSettingId], references: [id], onDelete: Cascade)
+  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, endsAt], map: "user_endsAt_idx")
+}
+
+model SubmarineSetting {
+  id         String      @id @default(cuid())
+  duration   Int         @unique
+  rewardId   String?
+  active     Boolean     @default(false)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  submarines Submarine[]
+  reward     Reward?     @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+}
+
+model Friendship {
+  userId1   String
+  userId2   String
+  createdAt DateTime @default(now())
+  user1     User     @relation("User1Friendships", fields: [userId1], references: [id], onDelete: Cascade)
+  user2     User     @relation("User2Friendships", fields: [userId2], references: [id], onDelete: Cascade)
+
+  @@id([userId1, userId2])
+  @@index([userId1, userId2])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Referral {
+  id             String         @id @default(cuid())
+  inviterId      String
+  inviteeId      String?        @unique
+  referralCode   String
+  status         ReferralStatus @default(PENDING)
+  createdAt      DateTime       @default(now())
+  acceptedAt     DateTime?
+  inviteeClaimed Boolean        @default(false)
+  inviterClaimed Boolean        @default(false)
+  invitee        User?          @relation("InviteeReferral", fields: [inviteeId], references: [id], onDelete: Cascade)
+  inviter        User           @relation("InviterReferrals", fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@index([inviterId], map: "referral_inviterId_idx")
+  @@index([inviteeId], map: "referral_inviteeId_idx")
+}
+
+model AdminSettings {
+  id                         String            @id @default(cuid())
+  updatedAt                  DateTime          @updatedAt
+  slotMachineConfigId        String
+  collectionIntervalMinutes  Int
+  dailyCollectionSoftLimit   Int               @default(80)
+  initialUserCoins           Int
+  maxDailyCollectionAmount   Int
+  maxDailyCollectionAttempts Int
+  wheelConfigId              String?
+  referralRewardCoins        Int?
+  referralRewardId           String?
+  referralRewardItem         Reward?           @relation(fields: [referralRewardId], references: [id], onDelete: Cascade)
+  slotMachineConfig          SlotMachineConfig @relation(fields: [slotMachineConfigId], references: [id])
+  wheelConfig                WheelConfig?      @relation(fields: [wheelConfigId], references: [id])
+}
+
+model WheelConfig {
+  id                      String          @id @default(cuid())
+  name                    String          @unique
+  segments                Int             @default(12)
+  updatedAt               DateTime        @updatedAt
+  centerCharacterImageUrl String?
+  topCharacterImageUrl    String?
+  active                  Boolean         @default(false)
+  backgroundImageUrl      String?
+  adminSettings           AdminSettings[]
+  segmentsData            WheelSegment[]
+}
+
+model WheelSegment {
+  id              String      @id @default(cuid())
+  label           String
+  imageUrl        String?
+  probability     Decimal     @db.Decimal(5, 4)
+  configId        String
+  rewardId        String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  backgroundColor String?
+  order           Int         @default(1)
+  config          WheelConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  reward          Reward?     @relation(fields: [rewardId], references: [id])
+}
+
+model SlotMachineConfig {
+  id            String          @id @default(cuid())
+  name          String          @unique
+  reels         Int             @default(3)
+  spinsPerDay   Int             @default(20)
+  updatedAt     DateTime        @updatedAt
+  active        Boolean         @default(false)
+  adminSettings AdminSettings[]
+  symbols       SlotSymbol[]
+}
+
+model SlotSymbol {
+  id                 String            @id @default(cuid())
+  symbol             String
+  count              Int
+  prize3             Int
+  prize2             Int
+  desiredProbability Decimal?          @db.Decimal(7, 6)
+  configId           String
+  imageUrl           String?
+  prize2ImageUrl     String?
+  prize3ImageUrl     String?
+  config             SlotMachineConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+}
+
+model GameState {
+  id                      String    @id @default(cuid())
+  userId                  String    @unique
+  coinsCollected          Int       @default(0)
+  collectionAttemptsToday Int       @default(0) @map("collectionsToday")
+  nextCollectAt           DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  divisionId              String?
+  slotSpinsAttemptsToday  Int       @default(0) @map("spinsToday")
+  dailySlotSpinsMax       Int       @default(20) @map("dailySpinsMax")
+  wheelSpinsToday         Int       @default(0) @map("bonusSpinsToday")
+  dailyWheelSpinsMax      Int       @default(1) @map("dailyBonusSpinsMax")
+  coinsCollectedToday     Int       @default(0)
+  totalCoinsPurchased     Int       @default(0)
+  totalWaitTimeReduction  Int       @default(0)
+  slotSpinTickets         Int       @default(0)
+  wheelSpinTickets        Int       @default(0)
+  submarineCollected      Boolean   @default(false)
+  submarineDuration       Int?
+  submarineEndsAt         DateTime?
+  submarineRewards        Int?
+  submarineStartedAt      DateTime?
+  lastMined               DateTime  @default(now())
+  minerCount              Int       @default(1)
+  miningRate              Decimal   @default(0.928) @db.Decimal(12, 6)  // rate per minute
+  division                Division? @relation(fields: [divisionId], references: [id])
+  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Challenge {
+  id                   String              @id @default(cuid())
+  title                String
+  description          String
+  type                 ChallengeType
+  rewardId             String
+  startDate            DateTime?
+  endDate              DateTime?
+  active               Boolean             @default(false)
+  link                 String?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  maxCompletionsPerDay Int                 @default(1)
+  imageUrl             String?
+  priority             Int                 @default(0)
+  reward               Reward              @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  challengeProgresses  ChallengeProgress[]
+  userRewards          UserReward[]
+}
+
+model ChallengeProgress {
+  id          String    @id @default(cuid())
+  userId      String
+  challengeId String
+  completedAt DateTime  @default(now())
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, challengeId, completedAt], map: "user_challenge_completedAt_idx")
+}
+
+model Reward {
+  id               String             @id @default(cuid())
+  name             String
+  description      String
+  points           Int?
+  rewardType       RewardType         @default(CURRENCY)
+  itemId           String?
+  amount           Int?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @default(now()) @updatedAt
+  referralRewards  AdminSettings[]
+  challenge        Challenge[]
+  raffleRewards    RaffleReward[]
+  item             Item?              @relation(fields: [itemId], references: [id])
+  submarineSetting SubmarineSetting[]
+  userRewards      UserReward[]
+  wheelSegment     WheelSegment[]
+}
+
+model BundledItem {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  quantity  Int      @default(1)
+  childId   String
+  parentId  String
+  child     Item     @relation("child_parents", fields: [childId], references: [id], onDelete: Cascade)
+  parent    Item     @relation("parent_children", fields: [parentId], references: [id], onDelete: Cascade)
+}
+
+model Item {
+  id                      String          @id @default(cuid())
+  name                    String
+  description             String?
+  imageUrl                String?
+  costTON                 Decimal?
+  costStars               Int?
+  itemType                ItemType
+  effectValue             Int?
+  isConsumable            Boolean         @default(false)
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @default(now()) @updatedAt
+  active                  Boolean         @default(true)
+  discountTON             Decimal?
+  storeDisplayImageUrl    String?
+  costCoins               Int?
+  displayOnStore          Boolean         @default(true)
+  quantity                Int             @default(1)
+  tier                    ItemTierType    @default(BASIC)
+  tonOnly                 Boolean         @default(false)
+  maxPurchases            Int?            @default(1)
+  parents                 BundledItem[]   @relation("child_parents")
+  children                BundledItem[]   @relation("parent_children")
+  reward                  Reward[]
+  transaction             Transaction[]
+  userCharactersBoat      UserCharacter[] @relation("Boat")
+  userCharactersBodyColor UserCharacter[] @relation("BodyColor")
+  userCharactersEyewear   UserCharacter[] @relation("Eyewear")
+  userCharactersFootwear  UserCharacter[] @relation("Footwear")
+  userCharactersHeadwear  UserCharacter[] @relation("Headwear")
+  userItems               UserItem[]
+  purchases               UserPurchase[]
+}
+
+model UserCharacter {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  avatarUrl   String?
+  name        String?
+  bodyColorId String?
+  headwearId  String?
+  eyewearId   String?
+  footwearId  String?
+  boatId      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+  boat        Item?    @relation("Boat", fields: [boatId], references: [id])
+  bodyColor   Item?    @relation("BodyColor", fields: [bodyColorId], references: [id])
+  eyewear     Item?    @relation("Eyewear", fields: [eyewearId], references: [id])
+  footwear    Item?    @relation("Footwear", fields: [footwearId], references: [id])
+  headwear    Item?    @relation("Headwear", fields: [headwearId], references: [id])
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model UserItem {
+  id          String   @id @default(cuid())
+  userId      String
+  itemId      String
+  quantity    Int      @default(1)
+  usedCount   Int      @default(0)
+  purchasedAt DateTime @default(now())
+  item        Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId], name: "userId_itemId_unique")
+}
+
+model UserPurchase {
+  id        String   @id @default(cuid())
+  userId    String   @db.VarChar(255)
+  itemId    String   @db.VarChar(255)
+  quantity  Int
+  createdAt DateTime @default(now())
+  item      Item     @relation(fields: [itemId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Transaction {
+  id              String            @id @default(cuid())
+  userId          String
+  itemId          String
+  amountTON       Decimal?
+  amountStars     Int?
+  date            DateTime          @default(now())
+  status          TransactionStatus @default(SUCCESS)
+  amountCoins     Int?
+  paymentType     PaymentType       @default(COINS)
+  transactionType TransactionType   @default(PURCHASE)
+  notes           String?
+  item            Item              @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserReward {
+  id          String     @id @default(cuid())
+  userId      String
+  rewardId    String
+  source      RewardSource @default(CHALLENGE)
+  claimed     Boolean    @default(false)
+  claimedAt   DateTime?
+  createdAt   DateTime   @default(now())
+  challengeId String?
+  challenge   Challenge? @relation(fields: [challengeId], references: [id])
+  reward      Reward     @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, challengeId, rewardId, claimedAt], name: "userChallengeRewardUnique")
+}
+
+
+enum RewardSource {
+  WHEEL
+  SLOT
+  CHALLENGE
+  ADMIN
+  REFERRAL
+  SUBMARINE
+  OTHER
+}
+
+model Division {
+  id                 String      @id @default(cuid())
+  name               String
+  minCoins           Int
+  maxCoins           Int?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @default(now()) @updatedAt
+  imageUrl           String?
+  backgroundImageUrl String?
+  ribbonImageUrl     String?
+  gameStates         GameState[]
+  userRanks          UserRank[]
+}
+
+model UserRank {
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  rank         Int
+  coins        Int
+  country      Country?
+  updatedAt    DateTime  @default(now()) @updatedAt
+  divisionId   String?
+  divisionRank Int?
+  division     Division? @relation(fields: [divisionId], references: [id])
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CountryRank {
+  id         String   @id @default(cuid())
+  country    Country  @unique
+  totalCoins Int
+  rank       Int
+  updatedAt  DateTime @default(now()) @updatedAt
+}
+
+model Raffle {
+  id              String         @id @default(cuid())
+  name            String
+  description     String
+  imageUrl        String?
+  startDate       DateTime?
+  endDate         DateTime?
+  entryPool       Int            @map("totalPool")
+  active          Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @default(now()) @updatedAt
+  drawDate        DateTime?
+  numberOfWinners Int?
+  backgroundColor String?
+  ticketColor     String?
+  displayOnPage   Boolean        @default(true) @map("displayOnStore")
+  raffleEntries   RaffleEntry[]
+  raffleRewards   RaffleReward[]
+  winners         User[]         @relation("Winner")
+}
+
+model RaffleEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  raffleId  String
+  createdAt DateTime @default(now())
+  raffle    Raffle   @relation(fields: [raffleId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RaffleReward {
+  id       String @id @default(cuid())
+  raffleId String
+  rewardId String
+  quantity Int    @default(1)
+  raffle   Raffle @relation(fields: [raffleId], references: [id], onDelete: Cascade)
+  reward   Reward @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+}
+
+model CronJobLog {
+  id        String        @id @default(cuid())
+  name      String
+  status    CronJobStatus @default(SUCCESS)
+  startTime DateTime      @default(now())
+  endTime   DateTime?
+  retries   Int           @default(0)
+  error     String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  type      CronJobType
+}
+
+enum AirdropApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ChallengeType {
+  ADVERTISEMENT
+  TWITTER_ONE_TIME
+  TWITTER_DAILY
+  ONE_TIME
+  DAILY
+  MONTHLY
+}
+
+enum RewardType {
+  CURRENCY
+  ITEM
+  SLOT_SPIN_TICKET
+  WHEEL_SPIN_TICKET
+  RAFFLE_ENTRY_TICKET
+  SUBMARINE_REWARD
+}
+
+enum ItemType {
+  WAIT_TIME_REDUCTION
+  COIN_PURCHASE
+  HEADWEAR
+  EYEWEAR
+  BODY_COLOR
+  FOOTWEAR
+  BOAT_APPEARANCE
+  SLOT_SPIN_TICKET
+  WHEEL_SPIN_TICKET
+  RAFFLE_ENTRY_TICKET
+  INCREASE_SLOT_SPIN_TICKET
+  INCREASE_WHEEL_SPIN_TICKET
+  INCREASE_MINER_COUNT
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
+enum TransactionType {
+  PURCHASE
+  REWARD
+  REFUND
+}
+
+enum PaymentType {
+  COINS
+  TON
+  STARS
+  ETC
+}
+
+enum ItemTierType {
+  BASIC
+  SILVER
+  GOLD
+  PLATINUM
+  LUI
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  BOT
+  MODERATOR
+}
+
+enum ReferralStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum CronJobType {
+  USER_RANK
+  USER_GAME_STATE
+}
+
+enum CronJobStatus {
+  SUCCESS
+  FAILED
+}
+
+enum Country {
+  AF
+  AL
+  DZ
+  AD
+  AO
+  AG
+  AR
+  AM
+  AU
+  AT
+  AZ
+  BS
+  BH
+  BD
+  BB
+  BY
+  BE
+  BZ
+  BJ
+  BT
+  BO
+  BA
+  BW
+  BR
+  BN
+  BG
+  BF
+  BI
+  CV
+  KH
+  CM
+  CA
+  CF
+  TD
+  CL
+  CN
+  CO
+  KM
+  CG
+  CD
+  CR
+  HR
+  CU
+  CY
+  CZ
+  DK
+  DJ
+  DM
+  DO
+  EC
+  EG
+  SV
+  GQ
+  ER
+  EE
+  SZ
+  ET
+  FJ
+  FI
+  FR
+  GA
+  GM
+  GE
+  DE
+  GH
+  GR
+  GD
+  GT
+  GN
+  GW
+  GY
+  HT
+  HN
+  HU
+  IS
+  IN
+  ID
+  IR
+  IQ
+  IE
+  IL
+  IT
+  JM
+  JP
+  JO
+  KZ
+  KE
+  KI
+  KW
+  KG
+  LA
+  LV
+  LB
+  LS
+  LR
+  LY
+  LI
+  LT
+  LU
+  MG
+  MW
+  MY
+  MV
+  ML
+  MT
+  MH
+  MR
+  MU
+  MX
+  FM
+  MD
+  MC
+  MN
+  ME
+  MA
+  MZ
+  MM
+  NA
+  NR
+  NP
+  NL
+  NZ
+  NI
+  NE
+  NG
+  KP
+  MK
+  NO
+  OM
+  PK
+  PW
+  PA
+  PG
+  PY
+  PE
+  PH
+  PL
+  PT
+  QA
+  RO
+  RU
+  RW
+  KN
+  LC
+  VC
+  WS
+  SM
+  ST
+  SA
+  SN
+  RS
+  SC
+  SL
+  SG
+  SK
+  SI
+  SB
+  SO
+  ZA
+  KR
+  SS
+  ES
+  LK
+  SD
+  SR
+  SE
+  CH
+  SY
+  TW
+  TJ
+  TZ
+  TH
+  TL
+  TG
+  TO
+  TT
+  TN
+  TR
+  TM
+  TV
+  UG
+  UA
+  AE
+  GB
+  US
+  UY
+  UZ
+  VU
+  VA
+  VE
+  VN
+  YE
+  ZM
+  ZW
+}

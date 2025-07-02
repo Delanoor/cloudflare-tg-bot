@@ -24,16 +24,15 @@ enabled = true
 # - https://developers.cloudflare.com/workers/configuration/secrets/
 [vars]
 BOT_INFO = """{
-   "id":7888712120,
-   "is_bot":true,
-   "first_name":"apple_banana_cat",
-   "username":"stoopid_cats_dev_bot",
-   "can_join_groups":true,
-   "can_read_all_group_messages":false,
-   "supports_inline_queries":true,
-   "can_connect_to_business":true,
-   "has_main_web_app":true
-}"""
+      "id":7602052513,
+      "is_bot":true,
+      "first_name":"Stoopid Cats",
+      "username":"StoopidCatsBot",
+      "can_join_groups":true,
+      "can_read_all_group_messages":false,
+      "supports_inline_queries":false,
+      "can_connect_to_business":false,
+      "has_main_web_app":true}"""
 # Bind the Workers AI model catalog. Run machine learning models, powered by serverless GPUs, on Cloudflare’s global network
 # Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#workers-ai
 # [ai]
