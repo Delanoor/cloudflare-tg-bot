@@ -22,15 +22,13 @@ export interface Env {
 }
 
 // Create Prisma instance optimized for serverless with Accelerate
-function createPrismaClient(databaseUrl: string) {
-	const prisma = new PrismaClient({
-		datasourceUrl: databaseUrl,
-		// Optimize for serverless environments
-		log: ["error"],
-	}).$extends(withAccelerate());
+// function createPrismaClient(databaseUrl: string) {
+// 	const prisma = new PrismaClient({
+// 		log: ["error"],
+// 	}).$extends(withAccelerate());
 
-	return prisma;
-}
+// 	return prisma;
+// }
 
 export default {
 	async fetch(
@@ -41,7 +39,13 @@ export default {
 		const bot = new Bot(env.BOT_TOKEN, { botInfo: JSON.parse(env.BOT_INFO) });
 
 		// Initialize Prisma client
-		const prisma = createPrismaClient(env.DATABASE_URL);
+		const prisma = new PrismaClient({
+			datasources: {
+				db: {
+					url: env.DATABASE_URL,
+				},
+			},
+		}).$extends(withAccelerate());
 
 		const webAppUrl = "https://t.me/StoopidCatsBot/stoopid_cats";
 		const webAppUrlStart = "https://t.me/StoopidCatsBot/stoopid_cats?startapp";
@@ -97,20 +101,20 @@ Hey there, Stoopid Cat! 🐱
 
 We're preparing for some exciting Twitter integration features and need your help!
 
-📝 **What to do:**
+📝 What to do:
 Reply to this message with your Twitter username (without the @ symbol)
 
-✅ **Examples:**
-• Good: "elonmusk" 
-• Good: "stoopidcats"
-• ❌ Bad: "@elonmusk"
+✅ Examples:
+• Good: "goodFellas" 
+• Good: "stoopidcats123"
+• ❌ Bad: "@goodFellas"
 
-💡 **Why we need this:**
+💡 Why we need this:
 • Future Twitter-based features
 • Community engagement opportunities  
 • Enhanced reward systems
 
-🔒 **Privacy Note:** Your Twitter username will only be used for game features and will never be shared without permission.
+🔒 Privacy Note: Your Twitter username will only be used for game features and will never be shared without permission.
 
 Ready? Just reply to this message with your Twitter username! 👇`;
 
@@ -127,7 +131,6 @@ Ready? Just reply to this message with your Twitter username! 👇`;
 			if (!ctx.from) return;
 
 			await ctx.reply(twitterRequestMessage, {
-				parse_mode: "Markdown",
 				reply_markup: {
 					force_reply: true,
 					input_field_placeholder: "Enter your Twitter username (without @)",
@@ -160,13 +163,7 @@ Ready? Just reply to this message with your Twitter username! 👇`;
 
 				if (user.twitterUsername) {
 					await ctx.reply(
-						`📱 **Your Current Twitter Username:**
-
-👤 **Player:** ${userName}
-🐦 **Twitter:** @${user.twitterUsername}
-
-To update, simply send your new Twitter username (without @).`,
-						{ parse_mode: "Markdown" },
+						`📱 Your Current Twitter Username:\n\n👤 Player: ${userName}\n🐦 Twitter: @${user.twitterUsername}\n\nTo update, use /connect_twitter and reply with your new username.`,
 					);
 				} else {
 					await ctx.reply(
@@ -218,7 +215,6 @@ To update, simply send your new Twitter username (without @).`,
 			if (!twitterUsernameRegex.test(messageText)) {
 				await ctx.reply(
 					'❌ Invalid Twitter username format!\n\nPlease make sure your username:\n• Contains only letters, numbers, and underscores\n• Is 1-15 characters long\n• Does NOT include the @ symbol\n\nExample: "stoopidcats" ✅\nTry again! 👇',
-					{ parse_mode: "Markdown" },
 				);
 				return;
 			}
@@ -251,8 +247,7 @@ To update, simply send your new Twitter username (without @).`,
 				const userName = user.nickname || user.name || "Stoopid Cat";
 
 				await ctx.reply(
-					`✅ **Success!** Your Twitter username has been saved!\n\n👤 **Player:** ${userName}\n🐦 **Twitter:** @${messageText}\n\nThank you for helping us connect your account! 🐱✨\n\n🎮 Continue playing: https://t.me/StoopidCatsBot/stoopid_cats`,
-					{ parse_mode: "Markdown" },
+					`✅ Success! Your Twitter username has been saved!\n\n👤 Player: ${userName}\n🐦 Twitter: @${messageText}\n\nThank you for helping us connect your account! 🐱✨\n\n🎮 Continue playing: https://t.me/StoopidCatsBot/stoopid_cats`,
 				);
 
 				console.log(
@@ -269,8 +264,7 @@ To update, simply send your new Twitter username (without @).`,
 		// Add help command
 		bot.command("help", async (ctx) => {
 			await ctx.reply(
-				"🤖 **Bot Commands:**\n\n• /connect_twitter - Connect your Twitter account\n• /mytwitter - Check your saved Twitter username\n• /help - Show this help message\n\n🎮 Play the game: https://t.me/StoopidCatsBot/stoopid_cats",
-				{ parse_mode: "Markdown" },
+				"🤖 Bot Commands:\n\n• /connect_twitter - Connect your Twitter account\n• /mytwitter - Check your saved Twitter username\n• /help - Show this help message\n\n🎮 Play the game: https://t.me/StoopidCatsBot/stoopid_cats",
 			);
 		});
 
