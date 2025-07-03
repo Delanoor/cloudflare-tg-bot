@@ -130,7 +130,32 @@ Ready? Just reply to this message with your Twitter username! 👇`;
 		bot.command("connect_twitter", async (ctx) => {
 			if (!ctx.from) return;
 
-			await ctx.reply(twitterRequestMessage, {
+			const customMessage = `🐦 Help Us Connect Your Twitter Account! 🐦
+
+Hey there, ${ctx.from.first_name}! 🐱
+
+We're preparing for some exciting Twitter integration features and need your help!
+
+📝 What to do:
+Reply to this message with your Twitter username (without the @ symbol)
+
+✅ Examples:
+• Good: "goodFellas" 
+• Good: "stoopidcats123"
+• ❌ Bad: "@goodFellas"
+
+💡 Why we need this:
+• Future Twitter-based features
+• Community engagement opportunities  
+• Enhanced reward systems
+
+🔒 Privacy Note: Your Twitter username will only be used for game features and will never be shared without permission.
+
+⚠️ IMPORTANT: Only ${ctx.from.first_name} (User ID: ${ctx.from.id}) can reply to this message.
+
+Ready? Just reply to this message with your Twitter username! 👇`;
+
+			await ctx.reply(customMessage, {
 				reply_markup: {
 					force_reply: true,
 					input_field_placeholder: "Enter your Twitter username (without @)",
@@ -204,6 +229,17 @@ Ready? Just reply to this message with your Twitter username! 👇`;
 						"💡 To connect your Twitter account, please use the /connect_twitter command first, then reply to that message with your username!",
 					);
 				}
+				return;
+			}
+
+			// Check if the user replying is the same user who initiated the command
+			const originalMessageText = ctx.message.reply_to_message.text;
+			const userIdMatch = originalMessageText?.match(/User ID: (\d+)/);
+
+			if (!userIdMatch || userIdMatch[1] !== ctx.from.id.toString()) {
+				await ctx.reply(
+					"❌ You can only reply to your own /connect_twitter command! Please use /connect_twitter to start your own Twitter connection process.",
+				);
 				return;
 			}
 
