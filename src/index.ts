@@ -163,6 +163,49 @@ Ready? Just reply to this message with your Twitter username! 👇`;
 			});
 		});
 
+		// Command to apply for Android alpha testing
+		bot.command("alpha_apply", async (ctx) => {
+			if (!ctx.from) return;
+
+			const alphaMessage = `📱 Android Alpha Testing Application 📱
+
+Hey there, ${ctx.from.first_name}! 🎮
+
+We're excited to announce that we're looking for alpha testers for our Android mobile game!
+
+📋 What we need from you:
+Reply to this message with your Google Play email address (the email you use to sign into Google Play Store)
+
+✅ Examples:
+• Good: "user@gmail.com"
+• Good: "player@outlook.com"
+• Good: "gamer@yahoo.com"
+• ❌ Bad: "myemail" (must be a valid email address)
+
+🎯 Alpha Testing Benefits:
+• First access to new features
+• Exclusive alpha tester rewards
+• Direct feedback to developers
+• Special recognition in the community
+
+📊 Requirements:
+• Android device (version 8.0 or higher)
+• Google Play account with valid email
+• Active Telegram account
+• Willingness to provide feedback
+
+⚠️ IMPORTANT: Only ${ctx.from.first_name} (User ID: ${ctx.from.id}) can reply to this message.
+
+Ready to join our alpha testing program? Reply with your Google Play email address! 📱`;
+
+			await ctx.reply(alphaMessage, {
+				reply_markup: {
+					force_reply: true,
+					input_field_placeholder: "Enter your Google Play email address",
+				},
+			});
+		});
+
 		// Command to check current Twitter username
 		bot.command("my_twitter", async (ctx) => {
 			if (!ctx.from) return;
@@ -238,12 +281,89 @@ Ready? Just reply to this message with your Twitter username! 👇`;
 
 			if (!userIdMatch || userIdMatch[1] !== ctx.from.id.toString()) {
 				await ctx.reply(
-					"❌ You can only reply to your own /connect_twitter command! Please use /connect_twitter to start your own Twitter connection process.",
+					"❌ You can only reply to your own command! Please use the appropriate command to start your own process.",
 				);
 				return;
 			}
 
 			const tgId = ctx.from.id.toString();
+
+			// ================================ Alpha Testing Application ================================
+
+			// Check if this is an alpha application reply
+			if (originalMessageText?.includes("Android Alpha Testing Application")) {
+				try {
+					// Check if user exists in database
+					const user = await prisma.user.findUnique({
+						where: { tgId: tgId },
+						select: {
+							id: true,
+							nickname: true,
+							name: true,
+						},
+					});
+
+					if (!user) {
+						await ctx.reply(
+							"❌ User not found in our system.\n\nPlease make sure you've played the game at least once:\n🎮 https://t.me/StoopidCatsBot/stoopid_cats",
+						);
+						return;
+					}
+
+					// Validate email address format
+					const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+					if (!emailRegex.test(messageText)) {
+						await ctx.reply(
+							"❌ Invalid email address!\n\nPlease provide a valid Google Play email address.\n\nExamples:\n• user@gmail.com\n• player@outlook.com\n• gamer@yahoo.com",
+						);
+						return;
+					}
+
+					// Check if user already applied for this airdrop
+					const existingApplication =
+						await prisma.userAirdropApplication.findUnique({
+							where: {
+								userId_airdropSeasonId: {
+									userId: user.id,
+									airdropSeasonId: "cmd71ei1v0000js0449mlzsgf",
+								},
+							},
+						});
+
+					if (existingApplication) {
+						await ctx.reply(
+							"❌ You have already applied for alpha testing!\n\nWe have received your application and will contact you if selected.\n\n🎮 Continue playing: https://t.me/StoopidCatsBot/stoopid_cats",
+						);
+						return;
+					}
+
+					// Create airdrop application using existing model
+					await prisma.userAirdropApplication.create({
+						data: {
+							userId: user.id,
+							airdropSeasonId: "cmd71ei1v0000js0449mlzsgf",
+							walletAddress: messageText, // Store email as wallet address
+							status: "PENDING",
+						},
+					});
+
+					const userName = user.nickname || user.name || "Stoopid Cat";
+
+					await ctx.reply(
+						`✅ Alpha Application Received! 📱\n\n👤 Player: ${userName}\n📧 Email: ${messageText}\n\n🎯 What happens next:\n• Our team will review your application\n• You'll receive an email if selected\n• Alpha testers get first access and exclusive rewards\n\n📧 Contact: If you have questions, reach out to our support team.\n\n🎮 Continue playing: https://t.me/StoopidCatsBot/stoopid_cats\n\nThank you for your interest in alpha testing! 🚀`,
+					);
+
+					console.log(
+						`✅ Alpha application received from user ${tgId}: ${messageText}`,
+					);
+				} catch (error) {
+					console.error("Error processing alpha application:", error);
+					await ctx.reply(
+						"❌ Sorry, there was an error processing your alpha application.\n\nPlease try again in a few moments. If the problem persists, contact support.",
+					);
+				}
+				return;
+			}
 
 			// Validate Twitter username format
 			const twitterUsernameRegex = /^[a-zA-Z0-9_]{1,15}$/;
@@ -300,7 +420,7 @@ Ready? Just reply to this message with your Twitter username! 👇`;
 		// Add help command
 		bot.command("help", async (ctx) => {
 			await ctx.reply(
-				"🤖 Bot Commands:\n\n• /connect_twitter - Connect your Twitter account\n• /mytwitter - Check your saved Twitter username\n• /help - Show this help message\n\n🎮 Play the game: https://t.me/StoopidCatsBot/stoopid_cats",
+				"🤖 Bot Commands:\n\n• /connect_twitter - Connect your Twitter account\n• /mytwitter - Check your saved Twitter username\n• /alpha_apply - Apply for Android alpha testing\n• /help - Show this help message\n\n🎮 Play the game: https://t.me/StoopidCatsBot/stoopid_cats",
 			);
 		});
 
