@@ -46,16 +46,16 @@ export class CommandHandlers {
 	async handleAlphaApply(ctx: Context): Promise<void> {
 		if (!ctx.from) return;
 
-		const alphaMessage = MESSAGES.ALPHA_APPLICATION(
-			ctx.from.first_name,
-			ctx.from.id,
-		);
+		// const alphaMessage = MESSAGES.ALPHA_APPLICATION(
+		// 	ctx.from.first_name,
+		// 	ctx.from.id,
+		// );
 
-		await ctx.reply(alphaMessage, {
-			reply_markup: {
-				force_reply: true,
-				input_field_placeholder: "Enter your Google Play email address",
-			},
+		await ctx.reply(MESSAGES.ALPHA_APPLICATION_CLOSED, {
+			// reply_markup: {
+			// 	force_reply: true,
+			// 	input_field_placeholder: "Enter your Google Play email address",
+			// },
 		});
 	}
 

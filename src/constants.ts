@@ -5,6 +5,7 @@ export const BOT_CONFIG = {
 	WELCOME_IMAGE_URL:
 		"https://jfh5hylzykmxvrqk.public.blob.vercel-storage.com/images/bot-bBV4t7BRaHdQ7rslw0zXup6U4OdwKE.png",
 	ALPHA_AIRDROP_ID: "cmd71ei1v0000js0449mlzsgf",
+	ALPHA_APPLICATION_CLOSED: "cmd71ei1v0000js0449mlzsgf",
 } as const;
 
 // Validation patterns
@@ -108,6 +109,14 @@ Ready to join our alpha testing program? Reply with your Google Play email addre
 • /help - Show this help message
 
 🎮 Play the game: https://t.me/StoopidCatsBot/stoopid_cats`,
+
+	ALPHA_APPLICATION_CLOSED: `🚫 Alpha Testing Application Closed (Android Only) 🚫
+
+Thank you for your interest in our alpha testing program!
+
+We're currently not accepting applications for alpha testing.
+
+Please stay tuned for future updates!`,
 
 	ERRORS: {
 		USER_NOT_FOUND:
