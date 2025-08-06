@@ -16,18 +16,18 @@ export class AlphaService {
 				where: {
 					userId_airdropSeasonId: {
 						userId,
-						airdropSeasonId: BOT_CONFIG.ALPHA_AIRDROP_ID,
+						airdropSeasonId: BOT_CONFIG.ALPHA_AIRDROP_ID_IOS,
 					},
 				},
 				update: {
 					userId,
-					airdropSeasonId: BOT_CONFIG.ALPHA_AIRDROP_ID,
+					airdropSeasonId: BOT_CONFIG.ALPHA_AIRDROP_ID_IOS,
 					walletAddress: email, // Store email as wallet address
 					status: "PENDING",
 				},
 				create: {
 					userId,
-					airdropSeasonId: BOT_CONFIG.ALPHA_AIRDROP_ID,
+					airdropSeasonId: BOT_CONFIG.ALPHA_AIRDROP_ID_IOS,
 					walletAddress: email, // Store email as wallet address
 					status: "PENDING",
 				},
@@ -46,7 +46,7 @@ export class AlphaService {
 					where: {
 						userId_airdropSeasonId: {
 							userId,
-							airdropSeasonId: BOT_CONFIG.ALPHA_AIRDROP_ID,
+							airdropSeasonId: BOT_CONFIG.ALPHA_AIRDROP_ID_IOS,
 						},
 					},
 				});

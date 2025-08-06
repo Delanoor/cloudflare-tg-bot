@@ -39,10 +39,10 @@ export class MessageHandlers {
 		}
 
 		// Handle Alpha testing application
-		// if (this.isAlphaReply(ctx)) {
-		// 	await this.handleAlphaApplicationReply(ctx, messageText);
-		// 	return;
-		// }
+		if (this.isAlphaReply(ctx)) {
+			await this.handleAlphaApplicationReply(ctx, messageText);
+			return;
+		}
 	}
 
 	private isTwitterReply(ctx: Context): boolean {
@@ -53,13 +53,13 @@ export class MessageHandlers {
 		);
 	}
 
-	// private isAlphaReply(ctx: Context): boolean {
-	// 	if (!ctx.message?.reply_to_message) return false;
-	// 	return isReplyToBotMessage(
-	// 		ctx.message.reply_to_message,
-	// 		"Android Alpha Testing Application",
-	// 	);
-	// }
+	private isAlphaReply(ctx: Context): boolean {
+		if (!ctx.message?.reply_to_message) return false;
+		return isReplyToBotMessage(
+			ctx.message.reply_to_message,
+			"Apple ID Alpha Testing Application",
+		);
+	}
 
 	private async handleTwitterUsernameReply(
 		ctx: Context,

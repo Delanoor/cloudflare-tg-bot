@@ -4,7 +4,8 @@ export const BOT_CONFIG = {
 	WEB_APP_URL_START: "https://t.me/StoopidCatsBot/stoopid_cats?startapp",
 	WELCOME_IMAGE_URL:
 		"https://jfh5hylzykmxvrqk.public.blob.vercel-storage.com/images/bot-bBV4t7BRaHdQ7rslw0zXup6U4OdwKE.png",
-	ALPHA_AIRDROP_ID: "cmd71ei1v0000js0449mlzsgf",
+	ALPHA_AIRDROP_ID_ANDROID: "cmd71ei1v0000js0449mlzsgf",
+	ALPHA_AIRDROP_ID_IOS: "cmdzw6lun0000jv04tialn9i6",
 	ALPHA_APPLICATION_CLOSED: "cmd71ei1v0000js0449mlzsgf",
 } as const;
 
@@ -67,7 +68,7 @@ Reply to this message with your Twitter username (without the @ symbol)
 
 Ready? Just reply to this message with your Twitter username! 👇`,
 
-	ALPHA_APPLICATION: (
+	ALPHA_APPLICATION_ANDROID: (
 		firstName: string,
 		userId: number,
 	) => `📱 Android Alpha Testing Application 📱
@@ -100,6 +101,39 @@ Reply to this message with your Google Play email address (the email you use to 
 ⚠️ IMPORTANT: Only ${firstName} (User ID: ${userId}) can reply to this message.
 
 Ready to join our alpha testing program? Reply with your Google Play email address! 📱`,
+	ALPHA_APPLICATION_IOS: (
+		firstName: string,
+		userId: number,
+	) => `📱 Apple ID Alpha Testing Application 📱
+
+Hey there, ${firstName}! 🎮
+
+We're excited to announce that we're looking for alpha testers for our iOS mobile game!
+
+📋 What we need from you:
+Reply to this message with your Apple ID email address (the email you use to sign into Apple ID)
+
+✅ Examples:
+• Good: "user@apple.com"
+• Good: "player@outlook.com"
+• Good: "gamer@yahoo.com"
+• ❌ Bad: "myemail" (must be a valid email address)
+
+🎯 Alpha Testing Benefits:
+• First access to new features
+• Exclusive alpha tester rewards
+• Direct feedback to developers
+• Special recognition in the community
+
+📊 Requirements:
+• iOS device (version 14.0 or higher)
+• Apple ID account with valid email
+• Active Telegram account
+• Willingness to provide feedback
+
+⚠️ IMPORTANT: Only ${firstName} (User ID: ${userId}) can reply to this message.
+
+Ready to join our alpha testing program? Reply with your Apple ID email address! 📱`,
 
 	HELP: `🤖 Bot Commands:
 
